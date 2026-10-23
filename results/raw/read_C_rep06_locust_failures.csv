@@ -1,0 +1,3 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+GET,GET /owners/{id},CatchResponseError('HTTP 405'),3,2026-10-21T18:39:22Z,2026-10-21T18:40:43Z
+GET,GET /owners,CatchResponseError('HTTP 405'),5,2026-10-21T18:39:12Z,2026-10-21T18:40:44Z

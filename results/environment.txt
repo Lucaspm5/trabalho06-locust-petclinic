@@ -1,0 +1,47 @@
+# Ambiente - coletado em 2026-10-21T19:48:42-03:00
+## SO
+Distributor ID:	Ubuntu
+Description:	Ubuntu 26.04 LTS
+Release:	26.04
+Codename:	resolute
+Linux DESKTOP-6957GJJ 6.6.114.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Mon Dec  1 20:46:23 UTC 2025 x86_64 GNU/Linux
+## CPU
+CPU(s):                                  4
+Model name:                              Intel(R) Core(TM) i5-8365U CPU @ 1.60GHz
+Thread(s) per core:                      2
+Core(s) per socket:                      2
+## Memoria (WSL)
+               total        used        free      shared  buff/cache   available
+Mem:           7.8Gi       3.8Gi       215Mi        21Mi       3.9Gi       3.9Gi
+Swap:          2.0Gi       1.0Mi       2.0Gi
+## Docker
+Client 29.9.1 / Server 29.9.1
+Docker Compose version v5.6.0
+## Python / Locust
+Python 3.14.4
+locust 2.46.7 from /home/lucas/trabalho06-locust-petclinic/.venv/lib/python3.14/site-packages/locust (Python 3.14.4)
+## PetClinic (commit)
+1d76b00d683e86b62867a6bf59530f8ab301244f Wed Oct 7 19:01:35 2026 +0200
+## Containers
+NAMES               IMAGE                                                STATUS
+admin-server        springcommunity/spring-petclinic-admin-server        Up 10 hours
+vets-service        springcommunity/spring-petclinic-vets-service        Up 30 minutes
+api-gateway         springcommunity/spring-petclinic-api-gateway         Up 30 minutes
+visits-service      springcommunity/spring-petclinic-visits-service      Up 30 minutes
+customers-service   springcommunity/spring-petclinic-customers-service   Up 30 minutes
+discovery-server    springcommunity/spring-petclinic-discovery-server    Up 10 hours (healthy)
+config-server       springcommunity/spring-petclinic-config-server       Up 10 hours (healthy)
+grafana-server      spring-petclinic-microservices-grafana-server        Up 10 hours
+prometheus-server   spring-petclinic-microservices-prometheus-server     Up 10 hours
+tracing-server      openzipkin/zipkin                                    Up 10 hours (healthy)
+## Limite de memoria (bytes) por container
+/admin-server mem_limit=536870912
+/vets-service mem_limit=536870912
+/api-gateway mem_limit=536870912
+/visits-service mem_limit=536870912
+/customers-service mem_limit=536870912
+/discovery-server mem_limit=536870912
+/config-server mem_limit=536870912
+/grafana-server mem_limit=268435456
+/prometheus-server mem_limit=268435456
+/tracing-server mem_limit=536870912
