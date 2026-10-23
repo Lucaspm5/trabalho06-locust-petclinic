@@ -226,13 +226,67 @@ Valores: média ± desvio padrão das 10 repetições, na janela medida (sem aqu
 ![Tempo médio por operação](results/graphs/08_medio_por_operacao.png)
 
 ## 5. Respostas
-1. Efeito do aumento de usuários no tempo de resposta: ...
-2. Perfil com maior vazão: ...
-3. Operações com maior degradação: ...
-4. Variação do consumo de CPU: ...
-5. Cenário com maior taxa de falhas: ...
+
+### 5.1 Como o aumento de usuários afeta o tempo de resposta?
+
+O tempo de resposta cresce de forma não linear. No perfil de leitura, o tempo médio passa de 32,5 ms (30 usuários) para 411,5 ms (80) e 1913,1 ms (150). O P95 acompanha: 87,3 ms, 1682,6 ms e 5032,5 ms.
+
+No perfil de escrita, o tempo médio passa de 151,8 ms para 1994,3 ms entre os cenários A e B. No cenário C, a média cai para 1358,1 ms, mas o P95 sobe para 8430,6 ms. A queda da média é aparente: as requisições rejeitadas rapidamente (seção 5.5) reduzem o valor médio. O P95 é a métrica mais representativa nesse caso.
+
+Aumentar os usuários de 30 para 80 (2,7×) elevou o tempo médio em 12,7× na leitura e 13,1× na escrita. O crescimento supera o da carga, o que indica saturação, e não escalabilidade linear.
+
+### 5.2 Qual perfil apresenta maior vazão?
+
+O perfil de leitura apresentou maior vazão nos cenários A (19,57 contra 18,20 req/s) e B (41,89 contra 22,92 req/s). No cenário C, o perfil de escrita registrou o maior valor bruto (52,95 contra 44,23 req/s). Esse valor inclui 73,55% de requisições com falha, em geral rejeitadas rapidamente.
+
+Considerando apenas as requisições bem-sucedidas, a vazão útil da escrita no cenário C é de cerca de 14 req/s, contra cerca de 42,5 req/s na leitura. O perfil de leitura tem, portanto, a maior vazão efetiva nos três cenários.
+
+Na leitura, a vazão praticamente estabiliza entre B e C (41,89 e 44,23 req/s), embora os usuários tenham aumentado 87,5%. Esse platô indica que o sistema atingiu o limite de capacidade.
+
+### 5.3 Quais operações apresentam maior degradação?
+
+No perfil de leitura, a razão entre o tempo médio do cenário C e o do cenário A foi de 200,6× em `GET /owners/{id}`, 163,4× em `POST /owners`, 43,0× em `GET /owners` e 1,7× em `GET /vets`.
+
+Em valores absolutos, `GET /owners` é a operação mais lenta: 2469,3 ms na leitura (cenário C) e 4041,4 ms na escrita (cenário B). Essa operação retorna todos os owners cadastrados.
+
+`GET /vets` quase não se degrada (26,3 ms no cenário C de leitura), pois é atendida por um serviço pouco carregado. `GET /owners/{id}` e `POST /owners` apresentam tempos semelhantes (cerca de 2 s no cenário C de leitura). Esse comportamento é compatível com espera em fila no customers-service, e não com o custo intrínseco de cada operação.
+
+No perfil de escrita, `GET /owners` já é lento no cenário A (617,2 ms, contra 57,5 ms na leitura). Os POSTs aumentam a lista durante a execução. As razões C/A da escrita (3,4× a 43,0×) são menores e distorcidas pelas falhas rápidas do cenário C.
+
+### 5.4 Como o consumo de CPU varia entre os cenários?
+
+O customers-service é o serviço mais exigido. Na leitura, sua CPU média sobe de 53,9% (A) para 228,5% (B) e 248,0% (C), em relação a um core. O platô entre B e C, com tempo de resposta ainda crescente, indica saturação desse serviço.
+
+O api-gateway passa de 17,8% para 31,8% e 37,5%. O vets-service passa de 7,3% para 10,4% e 11,5%. Ambos permanecem longe da saturação.
+
+Na escrita, o customers-service consome 148,9%, 245,7% e 157,2% nos cenários A, B e C. A queda no cenário C coincide com a alta taxa de falhas: requisições rejeitadas no gateway não chegam ao serviço. No cenário A, a escrita consome mais CPU que a leitura (148,9% contra 53,9%), possivelmente pelo custo de `POST /owners` e pelo crescimento da lista de owners.
+
+### 5.5 Qual cenário apresenta maior taxa de falhas?
+
+O cenário C do perfil de escrita, com 73,55 ± 5,98% de falhas. Em seguida vêm o cenário C da leitura (3,95 ± 11,98%) e o cenário B da escrita (3,45 ± 9,61%). Os demais cenários ficaram em 0,01% ou menos.
+
+Os desvios altos nos dois últimos casos indicam que as falhas se concentraram em poucas repetições.
+
+Os erros observados são HTTP 405 nos GETs e 503 no POST. No cenário C da escrita, todas as operações falham em proporção semelhante (70,9% a 76,4%), inclusive `GET /vets`, cuja CPU permaneceu baixa. O padrão sugere que a falha ocorre no gateway, e não nos serviços.
+
+O gateway aplica o filtro CircuitBreaker (`defaultCircuitBreaker`) com fallback a todas as rotas. A hipótese é que o circuito abre quando o customers-service excede o limite de tempo e passa a rejeitar também as chamadas ao vets-service. Essa hipótese não foi comprovada nos testes.
 
 ## 6. Conclusões e limitações
+
+### Conclusões
+
+- O customers-service é o gargalo. Ele satura em torno de 250% de CPU já com 80 usuários.
+- Com 30 usuários, o sistema opera sem falhas e com baixa latência no perfil de leitura (média de 32,5 ms).
+- A partir de 80 usuários, a latência degrada fortemente. No cenário C, o P95 chega a 5,0 s (leitura) e 8,4 s (escrita).
+- O perfil de escrita é o mais sensível à carga. Ele tem menor vazão útil e é o único a atingir taxas de falha elevadas.
+- Em sobrecarga, o gateway passa a rejeitar requisições rapidamente. Isso protege o sistema, mas reduz a disponibilidade.
+
+### Limitações
+
 - Gerador de carga e aplicação compartilham a mesma máquina.
-- Containers limitados a 512 MB (definido no docker-compose do PetClinic).
-- `GET /owners` retorna todos os owners; no perfil de escrita a lista cresce durante a execução.
+- Os containers são limitados a 512 MB (definido no docker-compose do PetClinic).
+- `GET /owners` retorna todos os owners. No perfil de escrita, a lista cresce durante a execução.
+- A vazão bruta inclui requisições com falha.
+- Os resultados são a média aritmética das métricas de cada execução. O P95 reportado é a média dos P95.
+- Há variância alta entre repetições nos cenários com falhas.
+- O banco é HSQLDB em memória, e o tempo de espera entre requisições (1 a 2 s) influencia a carga efetiva.
