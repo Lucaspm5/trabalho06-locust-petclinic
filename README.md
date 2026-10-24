@@ -2,7 +2,7 @@
 
 Avaliação do Spring PetClinic Microservices sob dois perfis de carga (leitura e escrita) e três cenários (30, 80 e 150 usuários).
 
-**Vídeo demonstrativo:** <COLE_AQUI_O_LINK_DO_YOUTUBE>
+**Vídeo demonstrativo:** <[LINK_DO_YOUTUBE>](https://youtu.be/WmazWHB9keQ)>
 
 ## 1. Ambiente
 **Host (Windows):** Intel(R) Core(TM) i5-8365U CPU @ 1.60GHz; 16 GB de RAM. Experimentos executados em Ubuntu sobre WSL2 com Docker, gerador de carga (Locust) e aplicação na mesma máquina.
